@@ -1,0 +1,5 @@
+D:/Jogos/KL10-main/.utmp/RelWithDebInfo/106tp4xi/armeabi-v7a/CMakeFiles/edit_cache.dir
+D:/Jogos/KL10-main/.utmp/RelWithDebInfo/106tp4xi/armeabi-v7a/CMakeFiles/rebuild_cache.dir
+D:/Jogos/KL10-main/.utmp/RelWithDebInfo/106tp4xi/armeabi-v7a/FramePacing/CMakeFiles/swappywrapper.dir
+D:/Jogos/KL10-main/.utmp/RelWithDebInfo/106tp4xi/armeabi-v7a/FramePacing/CMakeFiles/edit_cache.dir
+D:/Jogos/KL10-main/.utmp/RelWithDebInfo/106tp4xi/armeabi-v7a/FramePacing/CMakeFiles/rebuild_cache.dir
