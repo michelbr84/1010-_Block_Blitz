@@ -1,8 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement; // Necessário para reiniciar a cena
-using UnityEngine.UI; // Necessário para manipular UI, caso precise
+using UnityEngine.SceneManagement; // Needed for scene reloading
+using UnityEngine.UI; // Needed for UI manipulation if required
 
 /// <summary>
 /// The GameController class manages the overall game flow, including initializing the board and spawner,
@@ -21,11 +21,15 @@ public class GameController : MonoBehaviour
 
     [Header("Camera Settings")]
     [Tooltip("Main camera used for raycasting")]
-    private Camera mainCamera;
+    [SerializeField] private Camera mainCamera; // Exposed to inspector for easy assignment
 
     [Header("Input Settings")]
     [Tooltip("Layer mask for selecting shapes")]
     [SerializeField] private LayerMask shapeLayer;
+
+    [Header("Shape Placement Settings")]
+    [Tooltip("Offset for the shape position when clicked (applied on top of the mouse position)")]
+    [SerializeField] private Vector2 clickPositionOffset;
 
     [Header("Game Over UI")]
     [Tooltip("Panel that displays the Game Over message and restart option")]
@@ -43,8 +47,11 @@ public class GameController : MonoBehaviour
     /// </summary>
     void Start()
     {
-        // Initialize main camera
-        mainCamera = Camera.main;
+        // Initialize main camera if not set in inspector
+        if (mainCamera == null)
+        {
+            mainCamera = Camera.main;
+        }
 
         // Ensure the Board reference is set
         if (gameBoard == null)
@@ -112,7 +119,7 @@ public class GameController : MonoBehaviour
         RaycastHit2D rayHit = Physics2D.Raycast(worldPoint, Vector2.zero, Mathf.Infinity, shapeLayer);
 
         // When the left mouse button is pressed, select a shape if available
-        if (Input.GetMouseButton(0))
+        if (Input.GetMouseButtonDown(0))
         {
             if (!rayHit)
                 return;
@@ -122,6 +129,7 @@ public class GameController : MonoBehaviour
                 selectedShape = rayHit.collider.GetComponent<Shape>();
                 if (selectedShape != null)
                 {
+                    // Scale up the shape to indicate selection
                     selectedShape.SetScaleUp();
                 }
             }
@@ -130,10 +138,10 @@ public class GameController : MonoBehaviour
         // When the left mouse button is released, attempt to place the shape on the board
         if (Input.GetMouseButtonUp(0))
         {
-            if (!rayHit || selectedShape == null)
+            if (selectedShape == null)
                 return;
 
-            // Snap the shape's position to the board grid
+            // Snap the shape's position to the board grid using the defined offset
             DropShapeOnBoard();
 
             // Validate if the shape's new position is valid
@@ -168,7 +176,7 @@ public class GameController : MonoBehaviour
             }
             else
             {
-                // If the drop position is invalid, reset the shape to its spawn position
+                // If the drop position is invalid, reset the shape to its spawn position and scale it down
                 selectedShape.SetScaleDown();
                 selectedShape.transform.position = selectedShape.GetSpawnPosition();
             }
@@ -179,32 +187,37 @@ public class GameController : MonoBehaviour
     }
 
     /// <summary>
-    /// Moves the currently selected shape to follow the mouse position.
+    /// Moves the currently selected shape to follow the mouse position with the defined offset.
     /// </summary>
     private void MoveSelectedShape()
     {
         if (selectedShape == null)
             return;
 
-        Vector2 mousePos = mainCamera.ScreenToWorldPoint(Input.mousePosition);
-        selectedShape.transform.position = new Vector2(mousePos.x, mousePos.y);
+        Vector2 worldPoint = mainCamera.ScreenToWorldPoint(Input.mousePosition);
+        // Apply the inspector-defined offset so the shape stays relative to the click position
+        selectedShape.transform.position = worldPoint + clickPositionOffset;
     }
 
     /// <summary>
-    /// Snaps the selected shape's position to the nearest integer grid cell.
+    /// Snaps the selected shape's position to the nearest integer grid cell using the inspector offset.
     /// </summary>
     private void DropShapeOnBoard()
     {
         if (selectedShape == null)
             return;
 
-        Vector2 mousePos = mainCamera.ScreenToWorldPoint(Input.mousePosition);
-        selectedShape.transform.position = Vector3Int.RoundToInt(new Vector2(mousePos.x, mousePos.y));
+        Vector2 worldPoint = mainCamera.ScreenToWorldPoint(Input.mousePosition);
+        // Snap to nearest grid cell
+        Vector3Int snapped = Vector3Int.RoundToInt(worldPoint);
+        Vector2 snappedPosition = new Vector2(snapped.x, snapped.y);
+        selectedShape.transform.position = snappedPosition + clickPositionOffset;
     }
 
     /// <summary>
     /// Checks if there are no more shapes left to place.
     /// </summary>
+    /// <returns>True if shape count is zero, false otherwise.</returns>
     private bool IsShapeCountZero()
     {
         return (spawner.GetShapeCount() == 0);
@@ -248,7 +261,7 @@ public class GameController : MonoBehaviour
             {
                 SFXManager.Instance.PlayGameOver();
             }
-            // Play Game Over particle effect at the camera's position (or outra posição desejada)
+            // Play Game Over particle effect at the camera's position (or another desired position)
             if (ParticleEffectsManager.Instance != null)
             {
                 ParticleEffectsManager.Instance.PlayGameOverEffect(mainCamera.transform.position);
